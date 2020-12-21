@@ -132,50 +132,53 @@ def get_computers(labml_token: str) -> flask.Response:
 
 @mix_panel.MixPanelEvent.time_this(0.4)
 def update_run() -> flask.Response:
-    errors = []
+    with monit.section(f'init'):
+        errors = []
 
-    token = request.args.get('labml_token', '')
-    version = request.args.get('labml_version', '')
-    run_uuid = request.args.get('run_uuid', '')
+        token = request.args.get('labml_token', '')
+        version = request.args.get('labml_version', '')
+        run_uuid = request.args.get('run_uuid', '')
 
-    if len(run_uuid) < 10:
-        error = {'error': 'invalid_run_uuid',
-                 'message': f'Invalid Run UUID'}
-        errors.append(error)
-        return jsonify({'errors': errors})
+        if len(run_uuid) < 10:
+            error = {'error': 'invalid_run_uuid',
+                     'message': f'Invalid Run UUID'}
+            errors.append(error)
+            return jsonify({'errors': errors})
 
-    if utils.check_version(version, settings.LABML_VERSION):
-        error = {'error': 'labml_outdated',
-                 'message': f'Your labml client is outdated, please upgrade: '
-                            'pip install labml --upgrade'}
-        errors.append(error)
-        return jsonify({'errors': errors})
+        if utils.check_version(version, settings.LABML_VERSION):
+            error = {'error': 'labml_outdated',
+                     'message': f'Your labml client is outdated, please upgrade: '
+                                'pip install labml --upgrade'}
+            errors.append(error)
+            return jsonify({'errors': errors})
 
-    p = project.get_project(labml_token=token)
-    if not p:
-        token = settings.FLOAT_PROJECT_TOKEN
+    with monit.section(f'project'):
+        p = project.get_project(labml_token=token)
+        if not p:
+            token = settings.FLOAT_PROJECT_TOKEN
 
-    r = run.get(run_uuid, token)
-    if not r and not p:
-        if request.args.get('labml_token', ''):
-            error = {'error': 'invalid_token',
-                     'message': 'Please create a valid token at https://web.lab-ml.com.\n'
-                                'Click on the experiment link to monitor the experiment and '
-                                'add it to your experiments list.'}
+    with monit.section(f'run'):
+        r = run.get(run_uuid, token)
+        if not r and not p:
+            if request.args.get('labml_token', ''):
+                error = {'error': 'invalid_token',
+                         'message': 'Please create a valid token at https://web.lab-ml.com.\n'
+                                    'Click on the experiment link to monitor the experiment and '
+                                    'add it to your experiments list.'}
+            else:
+                error = {'warning': 'empty_token',
+                         'message': 'Please create a valid token at https://web.lab-ml.com.\n'
+                                    'Click on the experiment link to monitor the experiment and '
+                                    'add it to your experiments list.'}
+            errors.append(error)
+
+        r = run.get_or_create(run_uuid, token, request.remote_addr)
+        s = r.status.load()
+
+        if isinstance(request.json, list):
+            data = request.json
         else:
-            error = {'warning': 'empty_token',
-                     'message': 'Please create a valid token at https://web.lab-ml.com.\n'
-                                'Click on the experiment link to monitor the experiment and '
-                                'add it to your experiments list.'}
-        errors.append(error)
-
-    r = run.get_or_create(run_uuid, token, request.remote_addr)
-    s = r.status.load()
-
-    if isinstance(request.json, list):
-        data = request.json
-    else:
-        data = [request.json]
+            data = [request.json]
 
     with monit.section(f'loop {len(data)}'):
         for d in data:
