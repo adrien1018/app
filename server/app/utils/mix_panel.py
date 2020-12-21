@@ -89,6 +89,8 @@ class Event:
                 if time_limit and total_time < time_limit:
                     return r
 
+                print(function.__name__, total_time)
+
                 self.track(function.__name__, {'time_elapsed': str(total_time)})
 
                 return r
