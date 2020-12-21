@@ -5,6 +5,8 @@ from labml_db import Model, Key, Index
 from .run import Run
 from .computer import Computer
 
+from labml.monit import section
+
 
 class Project(Model['Project']):
     labml_token: str
@@ -55,7 +57,8 @@ class ProjectIndex(Index['Project']):
 
 
 def get_project(labml_token: str) -> Union[None, Project]:
-    project_key = ProjectIndex.get(labml_token)
+    with section(f'ProjectIndex'):
+        project_key = ProjectIndex.get(labml_token)
 
     if project_key:
         return project_key.load()
