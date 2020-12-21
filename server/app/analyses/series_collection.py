@@ -3,6 +3,9 @@ from typing import Dict, Any
 from ..analyses.series import SeriesModel, Series
 from ..enums import SeriesEnums
 
+from ..utils import time_this
+from labml import monit
+
 
 class SeriesCollection:
     tracking: Dict[str, SeriesModel]
@@ -31,13 +34,16 @@ class SeriesCollection:
 
         return res
 
+    @time_this
     def track(self, data: Dict[str, SeriesModel]) -> None:
         for ind, series in data.items():
             self.step = max(self.step, series['step'][-1])
             self._update_series(ind, series)
 
-        self.save()
+        with monit.section('save'):
+            self.save()
 
+    # @time_this
     def _update_series(self, ind: str, series: SeriesModel) -> None:
         if ind not in self.tracking:
             self.tracking[ind] = Series().to_data()

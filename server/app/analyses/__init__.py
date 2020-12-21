@@ -25,6 +25,8 @@ computer_analyses = [CPUAnalysis,
                      DiskAnalysis,
                      ProcessAnalysis]
 
+from ..utils import time_this
+
 
 class AnalysisManager:
     @staticmethod

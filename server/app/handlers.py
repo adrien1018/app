@@ -1,4 +1,5 @@
 import sys
+import time
 import typing
 
 import flask
@@ -182,6 +183,8 @@ def update_run() -> flask.Response:
             AnalysisManager.track(run_uuid, d['track'])
 
     logger.debug(f'update_run, run_uuid: {run_uuid}, size : {sys.getsizeof(str(request.json)) / 1024} Kb')
+
+    time.sleep(10)
 
     return jsonify({'errors': errors, 'url': r.url})
 

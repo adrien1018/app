@@ -44,6 +44,8 @@ class Series:
             'step_gap': self.step_gap
         }
 
+    from ..utils import time_this
+
     def update(self, steps: List[float], values: List[float]) -> None:
         self.step += steps.copy()
         self.value += values.copy()
