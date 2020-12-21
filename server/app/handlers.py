@@ -172,9 +172,13 @@ def update_run() -> flask.Response:
                                     'add it to your experiments list.'}
             errors.append(error)
 
+    with monit.section(f'get_or_create'):
         r = run.get_or_create(run_uuid, token, request.remote_addr)
+
+    with monit.section(f'status'):
         s = r.status.load()
 
+    with monit.section(f'data list'):
         if isinstance(request.json, list):
             data = request.json
         else:
