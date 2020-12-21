@@ -60,8 +60,9 @@ def get_project(labml_token: str) -> Union[None, Project]:
     with section(f'ProjectIndex'):
         project_key = ProjectIndex.get(labml_token)
 
-    if project_key:
-        return project_key.load()
+    with section(f'projectLoad'):
+        if project_key:
+            return project_key.load()
 
     return None
 
