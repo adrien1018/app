@@ -6,6 +6,7 @@ import flask
 import werkzeug.wrappers
 from flask import request, make_response, jsonify
 
+from labml import monit
 from .logging import logger
 from . import settings
 from . import auth
@@ -176,15 +177,14 @@ def update_run() -> flask.Response:
     else:
         data = [request.json]
 
-    for d in data:
-        r.update_run(d)
-        s.update_time_status(d)
-        if 'track' in d:
-            AnalysisManager.track(run_uuid, d['track'])
+    with monit.section(f'loop {len(data)}'):
+        for d in data:
+            r.update_run(d)
+            s.update_time_status(d)
+            if 'track' in d:
+                AnalysisManager.track(run_uuid, d['track'])
 
     logger.debug(f'update_run, run_uuid: {run_uuid}, size : {sys.getsizeof(str(request.json)) / 1024} Kb')
-
-    time.sleep(10)
 
     return jsonify({'errors': errors, 'url': r.url})
 
